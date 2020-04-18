@@ -1,0 +1,35 @@
+[global]
+  sendAnonymousUsage = false
+
+[log]
+  level = "INFO"
+  format = "common"
+
+[providers]
+  [providers.docker]
+    endpoint = "unix:///var/run/docker.sock"
+    watch = true
+    exposedByDefault = true
+    swarmMode = false
+
+[api]
+  dashboard = false
+  debug = false
+  insecure = false
+
+[entryPoints]
+  [entryPoints.insecure]
+    address = ":80"
+  [entryPoints.secure]
+    address = ":443"
+
+[tls.options]
+  [tls.options.default]
+    minVersion = "VersionTLS13"
+
+[certificatesResolvers.letsencrypt.acme]
+  email = "contact@oprax.fr"
+  storage = "acme.json"
+  keyType = "EC256"
+  [certificatesResolvers.letsencrypt.acme.httpChallenge]
+    entryPoint = "insecure"

@@ -1,0 +1,41 @@
+version: '3'
+
+services:
+  reverse-proxy:
+    image: traefik:v2.2
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik.toml:/traefik.toml
+      - ./acme.json:/acme.json
+  nginx:
+    build:
+      context: ./nginx
+    volumes:
+      - images_volume:/home/app/web/images
+    expose:
+      - 80
+    depends_on:
+      - web
+    labels:
+      - traefik.http.routers.proppuls-http.entrypoints=insecure
+      - traefik.http.routers.proppuls-http.rule=Host(`gpuvm4.eastus.cloudapp.azure.com`)
+      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
+      - traefik.http.routers.proppuls-http.middlewares=https-redirect@docker
+      - traefik.http.routers.proppuls-https.entrypoints=secure
+      - traefik.http.routers.proppuls-https.rule=Host(`gpuvm4.eastus.cloudapp.azure.com`)
+      - traefik.http.routers.proppuls-https.tls=true
+      - traefik.http.routers.proppuls-https.tls.certresolver=letsencrypt
+  web:
+    build: .
+    command: pipenv run python api.py
+    volumes:
+      - images_volume:/home/app/web/images
+    expose:
+      - 8000
+
+volumes:
+  images_volume:
