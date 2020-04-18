@@ -11,8 +11,12 @@ def load_image ( path, type ) :
 	return cv2.imread ( path, type )
 	
 def write_image ( img, path ) :
-	cv2.imwrite ( path, img )
-	print ( "File '%s' has been created" % (path) )
+	if ( cv2.imwrite ( path, img ) ) :
+		print ( "File '%s' has been created" % (path) )
+		return True
+	else :
+		print ( "Error during creation of file '%s'" % (path) )
+		return False
 	
 def resize_image ( img, width, height, interpolation_type ) :
 	return cv2.resize( img, (width, height), interpolation = interpolation_type )
