@@ -78,13 +78,13 @@ def display_image(img, path):
     cv2.waitKey(0)
 
 
-# Test function
-path = "images/entry-file/scan.jpg"
-seg_path = segmentation_standardization(path)
-seg_img = load_image(seg_path, SegmentationSettings.color)
-class_path = classification_standardization(path)
-class_img = load_image(class_path, ClassificationSettings.color)
+# # Test function
+# path = "images/entry-file/scan.jpg"
+# seg_path = segmentation_standardization(path)
+# seg_img = load_image(seg_path, SegmentationSettings.color)
+# class_path = classification_standardization(path)
+# class_img = load_image(class_path, ClassificationSettings.color)
 
-# Closing app
-os.system("pause")
-cv2.destroyAllWindows()
+# # Closing app
+# os.system("pause")
+# cv2.destroyAllWindows()

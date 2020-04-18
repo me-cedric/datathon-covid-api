@@ -8,6 +8,8 @@ verify_ssl = true
 [packages]
 bottle = "*"
 peewee = "*"
+numpy = "*"
+opencv-python = "*"
 
 [requires]
 python_version = "3.8"

@@ -2,7 +2,10 @@ from bottle import Bottle, hook, post, request, response, route, run, static_fil
 import json
 import peewee as pw
 from pathlib import Path
-from playhouse.shortcuts import *
+from playhouse.shortcuts import model_to_dict
+from standardization import segmentation_standardization, classification_standardization
+from settings import SegmentationSettings
+from settings import ClassificationSettings
 
 db = pw.SqliteDatabase("data/image.db")
 
@@ -38,6 +41,7 @@ def upload():
     else:
         # Get the file
         upload = request.POST['file']
+        algorithm = request.POST['algorithm']
         fname = Path(upload.filename)
         # If not a good format, return error
         if fname.suffix not in (".png", ".jpg", ".jpeg", ".nii", ".nii.gz"):
@@ -53,16 +57,19 @@ def upload():
         upload.save(str(file_path), True)
 
         # TODO: Edit the image
+        writting_path = Path(classification_standardization(file_path)).resolve()
         # Save it and get the new variables 'file_path'
         # Store url in db and return the result, these will be treated
-        my_file = MedFile.create(url='/img/' + str(file_path), path=str(file_path))
+        folder = ClassificationSettings.path
+        if algorithm == 'segmentation':
+            folder = SegmentationSettings.path
+        my_file = MedFile.create(url=f'/{folder}/{writting_path.name}', path=str(writting_path))
         return json.dumps(model_to_dict(my_file))
 
-
 # Make images available
-@route('/img/<filepath:path>')
+@route('/images/<filepath:path>')
 def server_static(filepath):
-    return static_file(filepath, root="images/entry-file")
+    return static_file(filepath, root="images/")
 
 @route('/classification', method=['OPTIONS', 'POST'])
 def classification():
