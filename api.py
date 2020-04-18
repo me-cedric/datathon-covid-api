@@ -1,10 +1,24 @@
 import os
-from bottle import post, request, route, run, static_file
+from bottle import Bottle, post, request, route, run, static_file
 from json import dumps
+from peewee import *
+
+db = SqliteDatabase('image.db')
+
+class File(Model):
+    id = AutoField()
+    url = CharField()
+    path = CharField()
+    class Meta:
+        database = db
+
+db.connect()
+db.create_table([File])
 
 @route('/')
 def root():
-    return "This is the Datathon for COVID-19 API project"
+    assert [file for file in File.select()]
+    return 'This is the Datathon for COVID-19 API project'
 
 @post('/upload')
 def upload():
@@ -14,19 +28,20 @@ def upload():
     # If not a good format, return error
     if ext not in ('.png', '.jpg', '.jpeg', '.nii', '.nii.gz'):
         response.status = 405
-        return "File extension not allowed."
+        return 'File extension not allowed.'
 
     # TODO: Edit the image
 
     # Save the entry file
-    save_path = "/entry-file"
+    save_path = '/entry-file'
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
-    file_path = "{path}/{file}".format(path=save_path, file=upload.filename)
+    file_path = '{path}/{file}'.format(path=save_path, file=upload.filename)
     upload.save(file_path)
-
-    return file
+    # Store url in db and return the result
+    file = File.create(url='/img/' + file_path, path=file_path)
+    return dumps(str(file))
 
 # Make images available
 @route('/img/<filepath:path>')
