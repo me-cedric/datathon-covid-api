@@ -5,7 +5,7 @@ import numpy
 import cv2
 
 class SegmentationSettings :
-	path   = "ready_for_segmentation/"
+	path   = "images/ready_for_segmentation/"
 	width  = 512
 	height = 512
 	format = ".png"
@@ -13,10 +13,10 @@ class SegmentationSettings :
 	interpolation = cv2.INTER_AREA	
 
 class ClassificationSettings :
-	path   = "ready_for_classification/"
-	width  = 512
-	height = 512
-	format = ".png"
+	path   = "images/ready_for_classification/"
+	width  = 128
+	height = 128
+	format = ".jpg"
 	color  = cv2.IMREAD_GRAYSCALE
 	interpolation = cv2.INTER_AREA	
 

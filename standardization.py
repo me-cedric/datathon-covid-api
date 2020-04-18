@@ -33,6 +33,22 @@ def segmentation_standardization ( input_path ) :
 		
 	return writting_path
 	
+def classification_standardization ( input_path ) :
+	# Create writting path
+	basename = os.path.basename ( input_path )
+	[ filename, extension ] = os.path.splitext ( basename )
+	writting_path = ClassificationSettings.path + filename + ClassificationSettings.format
+	
+	# Check if file already exists or should be created
+	if os.path.isfile ( writting_path ) :
+		print ( "File '%s' already exists" % ( writting_path ) )
+	else :
+		img = load_image ( input_path, ClassificationSettings.color )
+		img = resize_image ( img, ClassificationSettings.width, ClassificationSettings.height, ClassificationSettings.interpolation )
+		write_image ( img, writting_path )
+		
+	return writting_path
+	
 def display_image ( img, path ) :
 	[ m, n ] = img.shape
 	caption = "%s [ %s x %s ]" % (path, m, n)
@@ -40,10 +56,11 @@ def display_image ( img, path ) :
 	cv2.waitKey ( 0 )
 	
 # Test function
-path = "input_images/scan.jpg"
+path = "images/entry-file/scan.jpg"
 seg_path = segmentation_standardization ( path )
 seg_img = load_image ( seg_path, SegmentationSettings.color )
-display_image ( seg_img, seg_path )
+class_path = classification_standardization ( path )
+class_img = load_image ( class_path, ClassificationSettings.color )
 
 # Closing app
 os.system ( "pause" )
