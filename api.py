@@ -1,5 +1,6 @@
 import os
 from bottle import post, request, route, run, static_file
+from json import dumps
 
 @route('/')
 def root():
@@ -35,11 +36,19 @@ def server_static(filepath):
 @post('/classification')
 def classification():
     ids = request.forms.get('ids')
-    return "Hello World!"
+    # Do classification
+    # Save the images
+    image_urls = [{ "type": "group", "urls": "/", "result": False, "accuracy": 95 }, { "type": "single", "url": "/", "result": True, "accuracy": 95 }]
+    response.content_type = 'application/json'
+    return dumps(image_urls)
 
 @post('/segmentation')
 def segmentation():
     ids = request.forms.get('ids')
-    return "Hello World!"
+    # Do segmentation
+    # Save the images
+    image_urls = [{ "type": "group", "urls": "/", "accuracy": 95 }, { "type": "single", "url": "/", "accuracy": 95 }]
+    response.content_type = 'application/json'
+    return dumps(image_urls)
     
 run(host='localhost', port=8080, debug=True)
