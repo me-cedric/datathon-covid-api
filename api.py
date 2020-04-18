@@ -44,8 +44,6 @@ def upload():
             response.status = 405
             return {"message": "File extension not allowed.", "code": response.status}
 
-        # TODO: Edit the image
-
         # Save the entry file
         save_path = Path('images/entry-file').resolve()
         if not save_path.exists():
@@ -53,7 +51,10 @@ def upload():
 
         file_path = save_path / fname
         upload.save(str(file_path), True)
-        # Store url in db and return the result
+
+        # TODO: Edit the image
+        # Save it and get the new variables 'file_path'
+        # Store url in db and return the result, these will be treated
         my_file = MedFile.create(url='/img/' + str(file_path), path=str(file_path))
         return json.dumps(model_to_dict(my_file))
 
