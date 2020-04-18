@@ -20,8 +20,7 @@ db.create_tables([File])
 
 @route("/")
 def root():
-    assert [f for f in File.select()]
-    return "This is the Datathon for COVID-19 API project"
+    return 'This is the Datathon for COVID-19 API project'
 
 
 @post("/upload")
