@@ -1,0 +1,6 @@
+entry-file/*
+covid-case/*
+non-covid-case/*
+!entry-file/.gitkeep
+!covid-case/.gitkeep
+!non-covid-case/.gitkeep
