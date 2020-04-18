@@ -6,6 +6,7 @@ services:
       context: ./nginx
     volumes:
       - images_volume:/home/app/web/images
+      - data_volume:/home/app/web/data
     ports:
       - '80:80'
     depends_on:
@@ -20,3 +21,4 @@ services:
 
 volumes:
   images_volume:
+  data_volume:

@@ -2,7 +2,7 @@ from bottle import Bottle, post, request, route, run, static_file
 import json
 import peewee as pw
 
-db = pw.SqliteDatabase("image.db")
+db = pw.SqliteDatabase("data/image.db")
 
 
 class File(pw.Model):
