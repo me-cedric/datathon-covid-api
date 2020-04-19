@@ -18,9 +18,9 @@ db = pw.SqliteDatabase("data/image.db")
 algo_seg = "segmentation"
 algo_cla = "classification"
 my_redis = redis.Redis(host=os.environ.get("REDIS_HOST", "localhost"), port=6379, db=0)
-pubsub_seg = my_redis.pubsub()
+pubsub_seg = my_redis.pubsub(ignore_subscribe_messages=True)
 pubsub_seg.subscribe("covid-segmentation-client")
-pubsub_cla = my_redis.pubsub()
+pubsub_cla = my_redis.pubsub(ignore_subscribe_messages=True)
 pubsub_cla.subscribe("covid-classification-client")
 
 img_folder = "images"
@@ -155,29 +155,38 @@ def server_static(filepath):
 
 
 #  Check status from redis
-@route("/api/status", method=["OPTIONS", "GET"])
+@route("/api/status", method=["OPTIONS", "POST"])
 def status():
     if request.method == "OPTIONS":
         return {}
     else:
-        pass
-        statusKeys = request.POST["statusKeys"]
+        statusKeys = json.loads(request.POST["statusKeys"])
         my_statuses = []
         for statusKey in statusKeys:
-            my_status = Status.get(Status.pk == statusKey)
-            if not my_status.value:
-                message = None
-                if my_status.algo_type == algo_seg:
-                    message = pubsub_seg.get_message()
-                else:
-                    message = pubsub_cla.get_message()
-                if message:
-                    my_message = json.loads(message["data"].decode("utf-8"))
-                    if my_message["id"] == statusKey:
-                        my_status.value = True
-                        my_status.results = saveResults(my_message["images"])
-            my_statuses.append(model_to_dict(my_status))
+            if isinstance(statusKey, list):
+                group_statuses = []
+                for pk in statusKey:
+                    group_statuses.append(checkStatus(pk))
+                my_statuses.append(group_statuses)
+            else:
+                my_statuses.append(checkStatus(statusKey))
         return json.dumps(my_statuses)
+
+def checkStatus(pk):
+    my_status = Status.get(Status.pk == pk)
+    if not my_status.value:
+        message = None
+        if my_status.algotype == algo_seg:
+            message = pubsub_seg.get_message()
+        else:
+            message = pubsub_cla.get_message()
+        if message:
+            print(message["data"])
+            my_message = json.loads(message["data"])
+            if my_message["id"] == pk:
+                my_status.value = True
+                my_status.results = saveResults(my_message["images"])
+    return model_to_dict(my_status)
 
 
 def saveResults(images):
