@@ -9,7 +9,7 @@ from settings import SegmentationSettings
 from settings import ClassificationSettings
 from nii2png import convert
 import gzip
-# import redis
+import redis
 
 db = pw.SqliteDatabase("data/image.db")
 # my_redis = redis.Redis(host='localhost', port=6379, db=0)
@@ -99,10 +99,10 @@ def upload():
                 file_obj = saveStandardFile(filename, file_path, algorithm)
                 if file_obj:
                     json_file_objs.append(file_obj)
-            return json_file_objs
+            return json.dumps(json_file_objs)
         file_obj = saveStandardFile(file_path.name, file_path, algorithm)
         if file_obj:
-            return file_obj
+            return json.dumps(file_obj)
         response.status = 500
         return {"message": "File could not be uploaded.", "code": response.status}
 
@@ -124,7 +124,7 @@ def saveStandardFile(filename, file_path, algorithm):
             url=f"/{folder}/{writting_path.name}", path=str(writting_path)
         )
         my_file.save()
-        return json.dumps(model_to_dict(my_file))
+        return model_to_dict(my_file)
     return False
 
 # Make images available
@@ -177,6 +177,10 @@ def segmentation():
         my_status = addStatus(ids)
         response.content_type = "application/json"
         return json.dumps(model_to_dict(my_status))
+
+def handleAlgorithmCall(ids):
+    my_status = addStatus(ids)
+    return json.dumps(model_to_dict(my_status))
 
 def addStatus(ids):
     my_status = Status.create()
