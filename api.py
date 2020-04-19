@@ -10,11 +10,16 @@ from settings import ClassificationSettings
 from nii2png import convert
 import gzip
 import redis
+import base64
 
 db = pw.SqliteDatabase("data/image.db")
-# my_redis = redis.Redis(host='localhost', port=6379, db=0)
-# pubsub = my_redis.pubsub()
-# pubsub.subscribe("covid")
+algo_seg = "segmentation"
+algo_cla = "classification"
+my_redis = redis.Redis(host='localhost', port=6379, db=0)
+pubsub_seg = my_redis.pubsub()
+pubsub_seg.subscribe("covid-segmentation-client")
+pubsub_cla = my_redis.pubsub()
+pubsub_cla.subscribe("covid-classification-client")
 
 class MedFile(pw.Model):
     pk = pw.AutoField()
@@ -26,6 +31,7 @@ class MedFile(pw.Model):
 
 class Status(pw.Model):
     pk = pw.AutoField()
+    algotype = pw.CharField()
     images = pw.ManyToManyField(MedFile, backref='status')
     value = pw.BooleanField(default=False)
     results = JSONField()
@@ -110,7 +116,7 @@ def saveStandardFile(filename, file_path, algorithm):
     writting_path = ""
     f_path = str(file_path.parent / filename)
     folder = ClassificationSettings.path
-    if algorithm == "segmentation":
+    if algorithm == algo_seg:
         folder = SegmentationSettings.path
         file_url = segmentation_standardization(f_path)
         if file_url:
@@ -139,28 +145,32 @@ def status():
         return {}
     else:
         pass
-        # statusKey = request.POST["statusKey"]
-        # my_status = Status.get(Status.pk == statusKey)
-        # if not my_status.value:
-        #     message = pubsub.get_message()
-        #     if message:
-        #         my_message = json.loads(message['data'].decode("utf-8"))
-        #         if my_message['id'] == statusKey:
-        #             my_status.value = True
-        #             my_status.result = my_message['images']
-        # return json.dumps(model_to_dict(my_status))
+        statusKeys = request.POST["statusKeys"]
+        my_statuses = []
+        for statusKey in statusKeys:
+            my_status = Status.get(Status.pk == statusKey)
+            if not my_status.value:
+                message = None
+                if my_status.algo_type == algo_seg:
+                    message = pubsub_seg.get_message()
+                else:
+                    message = pubsub_cla.get_message()
+                if message:
+                    my_message = json.loads(message['data'].decode("utf-8"))
+                    if my_message['id'] == statusKey:
+                        my_status.value = True
+                        my_status.result = my_message['images']
+            my_statuses.append(model_to_dict(my_status))
+        return json.dumps(my_statuses)
 
 @route("/classification", method=["OPTIONS", "POST"])
 def classification():
     if request.method == "OPTIONS":
         return {}
     else:
-        ids = request.POST["ids"]
-        # Start classification
-        # Save the initial status
-        my_status = addStatus(ids)
+        ids = json.loads(request.POST["ids"])
         response.content_type = "application/json"
-        return json.dumps(model_to_dict(my_status))
+        return json.dumps(handleAlgorithmCall(ids, algo_cla))
 
 
 @route("/segmentation", method=["OPTIONS", "POST"])
@@ -168,24 +178,35 @@ def segmentation():
     if request.method == "OPTIONS":
         return {}
     else:
-        ids = request.POST["ids"]
-        print("ids", ids)
-        for pk in ids:
-            print("pks", MedFile.get(MedFile.pk == pk))
-        # Do segmentation
-        # Save the images
-        my_status = addStatus(ids)
+        ids = json.loads(request.POST["ids"])
         response.content_type = "application/json"
-        return json.dumps(model_to_dict(my_status))
+        return json.dumps(handleAlgorithmCall(ids, algo_seg))
 
-def handleAlgorithmCall(ids):
-    my_status = addStatus(ids)
-    return json.dumps(model_to_dict(my_status))
+def handleAlgorithmCall(ids, algo_type):
+    resultingStatus = []
+    for idData in ids:
+        if isinstance(idData, list):
+            resultingStatus.append(addStatus(idData, algo_type))
+        resultingStatus.append(addStatus([idData], algo_type))
+    return resultingStatus
 
-def addStatus(ids):
-    my_status = Status.create()
-    my_status.files.add(MedFile.select().where(MedFile.pk << ids))
+def addStatus(ids, algo_type):
+    med_files = MedFile.select().where(MedFile.pk << ids)
+    my_status = Status.create(algotype=algo_type)
+    my_status.files.add(med_files)
     my_status.save()
+
+    trigger_data = { "id": my_status.pk, "images": [] }
+    for med_file in med_files:
+        encoded_string = ""
+        with open(med_file.path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read())
+        trigger_data["images"].append({ "id": med_file.pk, "binary": encoded_string })
+    # TODO: Call (algo_type ? segmentation : classification) for this group of id
+    if algo_type == algo_seg:
+        pubsub_seg.publish("covid-segmentation-server", json.dumps(trigger_data))
+    else:
+        pubsub_cla.publish("covid-classification-server", json.dumps(trigger_data))
     return my_status
 
 run(host="0.0.0.0", port=8000, debug=True)
