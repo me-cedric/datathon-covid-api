@@ -95,7 +95,9 @@ def convert(inputfile, outputdirectory):
                     #move images to folder
                     print('Moving image...')
                     src = image_name
-                    shutil.move(src, outputdirectory)
+                    src_folder = os.path.dirname(os.path.abspath(src))
+                    if not src_folder == outputdirectory:
+                        shutil.move(src, outputdirectory)
                     slice_counter += 1
                     print('Moved.')
 

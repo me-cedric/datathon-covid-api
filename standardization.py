@@ -32,19 +32,19 @@ def segmentation_standardization(input_path):
     writting_path = SegmentationSettings.path + filename + SegmentationSettings.format
 
     # Check if file already exists or should be created
-    if os.path.isfile(writting_path):
-        print("File '%s' already exists" % (writting_path))
-    else:
-        img = load_image(input_path, SegmentationSettings.color)
-        img = resize_image(
-            img,
-            SegmentationSettings.width,
-            SegmentationSettings.height,
-            SegmentationSettings.interpolation,
-        )
-        write_image(img, writting_path)
-
-    return writting_path
+    # if os.path.isfile(writting_path):
+    #     print("File '%s' already exists" % (writting_path))
+    # else:
+    img = load_image(input_path, SegmentationSettings.color)
+    img = resize_image(
+        img,
+        SegmentationSettings.width,
+        SegmentationSettings.height,
+        SegmentationSettings.interpolation,
+    )
+    if write_image(img, writting_path):
+        return writting_path
+    return False
 
 
 def classification_standardization(input_path):
@@ -56,19 +56,19 @@ def classification_standardization(input_path):
     )
 
     # Check if file already exists or should be created
-    if os.path.isfile(writting_path):
-        print("File '%s' already exists" % (writting_path))
-    else:
-        img = load_image(input_path, ClassificationSettings.color)
-        img = resize_image(
-            img,
-            ClassificationSettings.width,
-            ClassificationSettings.height,
-            ClassificationSettings.interpolation,
-        )
-        write_image(img, writting_path)
-
-    return writting_path
+    # if os.path.isfile(writting_path):
+    #     print("File '%s' already exists" % (writting_path))
+    # else:
+    img = load_image(input_path, ClassificationSettings.color)
+    img = resize_image(
+        img,
+        ClassificationSettings.width,
+        ClassificationSettings.height,
+        ClassificationSettings.interpolation,
+    )
+    if write_image(img, writting_path):
+        return writting_path
+    return False
 
 
 def display_image(img, path):

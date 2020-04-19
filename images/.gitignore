@@ -1,6 +1,10 @@
 entry-file/*
 covid-case/*
 non-covid-case/*
+ready_for_classification/*
+ready_for_segmentation/*
 !entry-file/.gitkeep
 !covid-case/.gitkeep
 !non-covid-case/.gitkeep
+!ready_for_classification/.gitkeep
+!ready_for_segmentation/.gitkeep

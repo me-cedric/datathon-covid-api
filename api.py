@@ -9,12 +9,12 @@ from settings import SegmentationSettings
 from settings import ClassificationSettings
 from nii2png import convert
 import gzip
-import redis
+# import redis
 
 db = pw.SqliteDatabase("data/image.db")
-my_redis = redis.Redis(host='localhost', port=6379, db=0)
-pubsub = my_redis.pubsub()
-pubsub.subscribe("covid")
+# my_redis = redis.Redis(host='localhost', port=6379, db=0)
+# pubsub = my_redis.pubsub()
+# pubsub.subscribe("covid")
 
 class MedFile(pw.Model):
     pk = pw.AutoField()
@@ -67,12 +67,9 @@ def upload():
         algorithm = request.POST["algorithm"]
         fname = Path(upload.filename)
         # If not a good format, return error
-        if fname.suffix not in (".png", ".jpg", ".jpeg", ".nii", ".nii.gz"):
+        if fname.suffix not in (".png", ".jpg", ".jpeg", ".nii", ".gz"):
             response.status = 405
             return {"message": "File extension not allowed.", "code": response.status}
-        if fname.suffix == ".nii.gz":
-            upload = gzip.GzipFile(fileobj=upload, mode='rb')
-            fname = Path(upload.filename)
         # Save the entry file
         save_path = Path("images/entry-file").resolve()
         if not save_path.exists():
@@ -81,8 +78,16 @@ def upload():
         file_path = save_path / fname
         upload.save(str(file_path), True)
         
-        if fname.suffix == ".nii":
+        if file_path.suffix == ".gz":
+            tmp = gzip.decompress(file_path.read_bytes())
+            tmpath = str(file_path.parent / file_path.stem)
+            file_path.unlink()
+            file_path = Path(tmpath)
+            file_path.write_bytes(tmp)
+
+        if file_path.suffix == ".nii":
             convert(str(file_path), str(save_path))
+            file_path.unlink()
 
         # TODO: Edit the image
         writting_path = ""
@@ -91,15 +96,22 @@ def upload():
         folder = ClassificationSettings.path
         if algorithm == "segmentation":
             folder = SegmentationSettings.path
-            writting_path = Path(segmentation_standardization(file_path)).resolve()
+            file_url = segmentation_standardization(str(file_path))
+            if file_url:
+                writting_path = Path(file_url).resolve()
         else:
-            writting_path = Path(classification_standardization(file_path)).resolve()
-        my_file = MedFile.create(
-            url=f"/{folder}/{writting_path.name}", path=str(writting_path)
-        )
-        my_file.save()
+            file_url = classification_standardization(str(file_path))
+            if file_url:
+                writting_path = Path(file_url).resolve()
         response.content_type = "application/json"
-        return json.dumps(model_to_dict(my_file))
+        if not writting_path == "":
+            my_file = MedFile.create(
+                url=f"/{folder}/{writting_path.name}", path=str(writting_path)
+            )
+            my_file.save()
+            return json.dumps(model_to_dict(my_file))
+        response.status = 500
+        return {"message": "File could not be uploaded.", "code": response.status}
 
 
 # Make images available
@@ -113,16 +125,17 @@ def status():
     if request.method == "OPTIONS":
         return {}
     else:
-        statusKey = request.POST["statusKey"]
-        my_status = Status.get(Status.pk == statusKey)
-        if not my_status.value:
-            message = pubsub.get_message()
-            if message:
-                my_message = json.loads(message['data'].decode("utf-8"))
-                if my_message['id'] == statusKey:
-                    my_status.value = True
-                    my_status.result = my_message['images']
-        return json.dumps(model_to_dict(my_status))
+        pass
+        # statusKey = request.POST["statusKey"]
+        # my_status = Status.get(Status.pk == statusKey)
+        # if not my_status.value:
+        #     message = pubsub.get_message()
+        #     if message:
+        #         my_message = json.loads(message['data'].decode("utf-8"))
+        #         if my_message['id'] == statusKey:
+        #             my_status.value = True
+        #             my_status.result = my_message['images']
+        # return json.dumps(model_to_dict(my_status))
 
 @route("/classification", method=["OPTIONS", "POST"])
 def classification():
