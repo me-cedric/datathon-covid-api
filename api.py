@@ -58,25 +58,25 @@ db.create_tables([MedFile, Status, FileAwaitingStatus])
 # TODO migration
 initDefaultDB()
 
-@hook("after_request")
-def enable_cors():
-    """
-    You need to add some headers to each request.
-    Don't use the wildcard '*' for Access-Control-Allow-Origin in production.
-    """
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "PUT, GET, POST, DELETE, OPTIONS"
-    response.headers[
-        "Access-Control-Allow-Headers"
-    ] = "Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token"
+# @hook("after_request")
+# def enable_cors():
+#     """
+#     You need to add some headers to each request.
+#     Don't use the wildcard '*' for Access-Control-Allow-Origin in production.
+#     """
+#     response.headers["Access-Control-Allow-Origin"] = "*"
+#     response.headers["Access-Control-Allow-Methods"] = "PUT, GET, POST, DELETE, OPTIONS"
+#     response.headers[
+#         "Access-Control-Allow-Headers"
+#     ] = "Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token"
 
 
-@route("/")
+@route("/api/")
 def root():
     return "This is the Datathon for COVID-19 API project"
 
 
-@route("/upload", method=["OPTIONS", "POST"])
+@route("/api/upload", method=["OPTIONS", "POST"])
 def upload():
     if request.method == "OPTIONS":
         return {}
@@ -149,13 +149,13 @@ def saveStandardFile(filename, file_path, algorithm):
 
 
 # Make images available
-@route("/images/<filepath:path>")
+@route("/api/images/<filepath:path>")
 def server_static(filepath):
     return static_file(filepath, root=f"{img_folder}/")
 
 
 #  Check status from redis
-@route("/status", method=["OPTIONS", "GET"])
+@route("/api/status", method=["OPTIONS", "GET"])
 def status():
     if request.method == "OPTIONS":
         return {}
@@ -199,7 +199,7 @@ def saveResults(images):
     return img_urls
 
 
-@route("/classification", method=["OPTIONS", "POST"])
+@route("/api/classification", method=["OPTIONS", "POST"])
 def classification():
     if request.method == "OPTIONS":
         return {}
@@ -209,7 +209,7 @@ def classification():
         return json.dumps(handleAlgorithmCall(ids, algo_cla))
 
 
-@route("/segmentation", method=["OPTIONS", "POST"])
+@route("/api/segmentation", method=["OPTIONS", "POST"])
 def segmentation():
     if request.method == "OPTIONS":
         return {}
