@@ -21,6 +21,13 @@ pubsub_seg.subscribe("covid-segmentation-client")
 pubsub_cla = my_redis.pubsub()
 pubsub_cla.subscribe("covid-classification-client")
 
+img_folder="images"
+entry_folder="entry-file"
+covid_folder="covid-case"
+healthy_folder="non-covid-case"
+ready_clas_folder="ready_for_classification"
+ready_seg_folder="ready_for_segmentation"
+
 class MedFile(pw.Model):
     pk = pw.AutoField()
     url = pw.CharField()
@@ -77,7 +84,7 @@ def upload():
             response.status = 405
             return {"message": "File extension not allowed.", "code": response.status}
         # Save the entry file
-        save_path = Path("images/entry-file").resolve()
+        save_path = Path(f"{img_folder}/{entry_folder}").resolve()
         if not save_path.exists():
             save_path.mkdir(parents=True)
 
@@ -136,7 +143,7 @@ def saveStandardFile(filename, file_path, algorithm):
 # Make images available
 @route("/images/<filepath:path>")
 def server_static(filepath):
-    return static_file(filepath, root="images/")
+    return static_file(filepath, root=f"{img_folder}/")
 
 #  Check status from redis
 @route("/status", method=["OPTIONS", "GET"])
@@ -159,9 +166,21 @@ def status():
                     my_message = json.loads(message['data'].decode("utf-8"))
                     if my_message['id'] == statusKey:
                         my_status.value = True
-                        my_status.result = my_message['images']
+                        my_status.result = saveResults(my_message['images'])
             my_statuses.append(model_to_dict(my_status))
         return json.dumps(my_statuses)
+
+def saveResults(images):
+    img_urls = []
+    for imgData in images:
+        source_file = MedFile.get(MedFile.pk == imgData.id)
+        source_url = Path(source_file.url)
+        save_path = f"{img_folder}/{healthy_folder}"
+        if imgData.detect:
+            save_path = f"{img_folder}/{covid_folder}"
+        img_urls.append({ "source": str(source_url), "result": f"{save_path}/res_{source_url.name}", "accuracy": imgData.accuracy, "detect": imgData.detect })
+    return img_urls
+
 
 @route("/classification", method=["OPTIONS", "POST"])
 def classification():
