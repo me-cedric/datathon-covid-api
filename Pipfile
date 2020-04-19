@@ -13,8 +13,7 @@ opencv-python = "*"
 scipy = "*"
 nibabel = "*"
 imageio = "*"
-imutils = "*"
-keras = "*"
+redis = "*"
 
 [requires]
 python_version = "3.8"
