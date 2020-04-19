@@ -4,8 +4,7 @@
 import numpy
 import cv2
 import os
-from settings import SegmentationSettings
-from settings import ClassificationSettings
+from settings import segmentationSettings, classificationSettings
 
 
 def load_image(path, type):
@@ -29,18 +28,18 @@ def segmentation_standardization(input_path):
     # Create writting path
     basename = os.path.basename(input_path)
     [filename, extension] = os.path.splitext(basename)
-    writting_path = SegmentationSettings.path + filename + SegmentationSettings.format
+    writting_path = segmentationSettings['path'] + filename + segmentationSettings['format']
 
     # Check if file already exists or should be created
     # if os.path.isfile(writting_path):
     #     print("File '%s' already exists" % (writting_path))
     # else:
-    img = load_image(input_path, SegmentationSettings.color)
+    img = load_image(input_path, segmentationSettings['color'])
     img = resize_image(
         img,
-        SegmentationSettings.width,
-        SegmentationSettings.height,
-        SegmentationSettings.interpolation,
+        segmentationSettings['width'],
+        segmentationSettings['height'],
+        segmentationSettings['interpolation'],
     )
     if write_image(img, writting_path):
         return writting_path
@@ -52,19 +51,19 @@ def classification_standardization(input_path):
     basename = os.path.basename(input_path)
     [filename, extension] = os.path.splitext(basename)
     writting_path = (
-        ClassificationSettings.path + filename + ClassificationSettings.format
+        classificationSettings['path'] + filename + classificationSettings['format']
     )
 
     # Check if file already exists or should be created
     # if os.path.isfile(writting_path):
     #     print("File '%s' already exists" % (writting_path))
     # else:
-    img = load_image(input_path, ClassificationSettings.color)
+    img = load_image(input_path, classificationSettings['color'])
     img = resize_image(
         img,
-        ClassificationSettings.width,
-        ClassificationSettings.height,
-        ClassificationSettings.interpolation,
+        classificationSettings['width'],
+        classificationSettings['height'],
+        classificationSettings['interpolation'],
     )
     if write_image(img, writting_path):
         return writting_path

@@ -3,118 +3,78 @@
 # Extern packages
 import numpy
 import cv2
-import peewee
+import peewee as pw
 import json
 
-db = peewee.SqliteDatabase("data/image.db")
+class JSONField(pw.TextField):
+    def db_value(self, value):
+        return json.dumps(value)
+
+    def python_value(self, value):
+        if value is not None:
+            return json.loads(value)
+
+db = pw.SqliteDatabase("data/image.db")
 
 # Segmentation class and wrapper
-class SegmentationSettings :
-	name = "default"
-    path = "images/ready_for_segmentation/"
-    width = 512
-    height = 512
-    format = ".png"
-    color = cv2.IMREAD_GRAYSCALE
-    interpolation = cv2.INTER_AREA
-	
-class SegmentationModel ( Model ) :
-	name = CharField ( unique = True )
-	jsonFile = JSONField()
+segmentationSettings = {
+	"path": "images/ready_for_segmentation/",
+	"width": 512,
+	"height": 512,
+	"format": ".png",
+	"color": cv2.IMREAD_GRAYSCALE,
+	"interpolation": cv2.INTER_AREA
+}
+
+class AlgoSettings(pw.Model):
+	name = pw.CharField( unique = True )
+	jsonFile = JSONField(default = None)
 	
 	class Meta :
 		database = db
-		table_name = "SegmentationSettings"
+		table_name = "AlgoSettings"
 
 		
 # Classification class and wrapper
-class ClassificationSettings :
-	name = "default"
-    path = "images/ready_for_classification/"
-    width = 416
-    height = 416
-    format = ".jpg"
-    color = cv2.IMREAD_GRAYSCALE
-    interpolation = cv2.INTER_AREA
-
-class ClassificationModel ( Model ) :
-	name = CharField ( unique = True )
-	jsonFile = JSONField()
-	
-	class Meta :
-		database = db
-		table_name = "ClassificationSettings"
-				
+classificationSettings = {
+	"path": "images/ready_for_classification/",
+	"width": 416,
+	"height": 416,
+	"format": ".jpg",
+	"color": cv2.IMREAD_GRAYSCALE,
+	"interpolation": cv2.INTER_AREA
+}
 
 def initDefaultDB ( ) :
 	db.connect() # Maybe we should test if connection is OK
-	
-	# If tables don't exist -> create them
-	if ( ! peewee.table_exists ( SegmentationSettings.Meta.table_name ) ) :
-		db.create_tables( SegmentationModel )
-		
-	if ( ! peewee.table_exists ( ClassificationSettings.Meta.table_name ) ) :
-		db.create_tables( ClassificationModel )
-	
+	db.create_tables([AlgoSettings])
 	# If default models don't exist -> add the row to table
-	addSegmentationSettings   ( "default", SegmentationSettings() )
-	addClassificationSettings ( "default", ClassificationSettings() )
-		
+	addSettings("segmentation", segmentationSettings)
+	addSettings("classification", classificationSettings)
 	db.close()
-	
-# Create a new row
-def addSegmentationSettings ( str_name, seg_set ) :
-	try :
-		exist = SegmentationModel.select().where( SegmentationModel.name == str_name ).get()
-		
-	except SegmentationModel.DoesNotExist :
-		jsf = json.dumps ( seg_set.__dict__ )
-		row = SegmentationModel ( name = str_name, jsonFile = jsf )
-		row.save()
 
-def addClassificationSettings ( str_name, class_set ) :
-	try :
-		exist = ClassificationModel.select().where( ClassificationModel.name == str_name ).get()
-		
-	except ClassificationModel.DoesNotExist :
-		jsf = json.dumps ( class_set.__dict__ )
-		row = ClassificationModel ( name = str_name, jsonFile = jsf )
+# Create a new row
+def addSettings(seg_name, seg_set):
+	try:
+		exist = AlgoSettings.select().where(AlgoSettings.name == seg_name).get()
+	except AlgoSettings.DoesNotExist:
+		row = AlgoSettings.create(name=seg_name, jsonFile=seg_set)
 		row.save()
 
 # Edit an existing row
-def editSegmentationSettings ( str_name, seg_set ) :
-	try :
-		exist = SegmentationModel.select().where( SegmentationModel.name == str_name ).get()
-	except SegmentationModel.DoesNotExist :
+def editSettings(seg_name, seg_set):
+	try:
+		exist = AlgoSettings.select().where( AlgoSettings.name == seg_name ).get()
+	except AlgoSettings.DoesNotExist :
 		return
-	
-	jsf = json.dumps ( seg_set.__dict__ )
-	query = SegmentationModel.update ( { SegmentationModel.jsonFile : jsf } ).where( name = str_name )
-	query.execute()
-	
-def editClassificationSettings ( str_name, seg_set ) :
-	try :
-		exist = ClassificationModel.select().where( ClassificationModel.name == str_name ).get()
-	except ClassificationModel.DoesNotExist :
-		return
-	
-	jsf = json.dumps ( seg_set.__dict__ )
-	query = ClassificationModel.update ( { ClassificationModel.jsonFile : jsf } ).where( name = str_name )
+	query = AlgoSettings.update ( { AlgoSettings.jsonFile : seg_set } ).where( name = seg_name )
 	query.execute()
 
 # Delete existing row		
-def deleteSegmentationSettings ( str_name ) :
-	try :
-		exist = SegmentationModel.select().where( SegmentationModel.name == str_name ).get()
-	except SegmentationModel.DoesNotExist :
-		return
-	
-	exist.delete_instance()
-	
-def deleteClassificationSettings ( str_name ) :
-	try :
-		exist = ClassificationModel.select().where( ClassificationModel.name == str_name ).get()
-	except ClassificationModel.DoesNotExist :
+def deleteSettings(seg_name):
+	try:
+		exist = AlgoSettings.select().where( AlgoSettings.name == seg_name ).get()
+	except AlgoSettings.DoesNotExist:
 		return
 	
 	exist.delete_instance()

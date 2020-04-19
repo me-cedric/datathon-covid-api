@@ -6,12 +6,13 @@ from pathlib import Path
 from playhouse.sqlite_ext import JSONField
 from playhouse.shortcuts import model_to_dict
 from standardization import segmentation_standardization, classification_standardization
-from settings import SegmentationSettings
-from settings import ClassificationSettings
+from settings import segmentationSettings, classificationSettings
 from nii2png import convert
 import gzip
 import redis
 import base64
+
+from settings import initDefaultDB
 
 db = pw.SqliteDatabase("data/image.db")
 algo_seg = "segmentation"
@@ -28,16 +29,6 @@ covid_folder = "covid-case"
 healthy_folder = "non-covid-case"
 ready_clas_folder = "ready_for_classification"
 ready_seg_folder = "ready_for_segmentation"
-
-
-class Setting(pw.Model):
-    pk = pw.AutoField()
-    name = pw.CharField()
-    content = JSONField()
-
-    class Meta:
-        database = db
-
 
 class MedFile(pw.Model):
     pk = pw.AutoField()
@@ -62,10 +53,10 @@ class Status(pw.Model):
 FileAwaitingStatus = Status.files.get_through_model()
 
 db.connect()
-db.create_tables([MedFile, Status, FileAwaitingStatus, Setting])
+db.create_tables([MedFile, Status, FileAwaitingStatus])
 
 # TODO migration
-
+initDefaultDB()
 
 @hook("after_request")
 def enable_cors():
@@ -138,9 +129,9 @@ def upload():
 def saveStandardFile(filename, file_path, algorithm):
     writting_path = ""
     f_path = str(file_path.parent / filename)
-    folder = ClassificationSettings.path
+    folder = classificationSettings['path']
     if algorithm == algo_seg:
-        folder = SegmentationSettings.path
+        folder = segmentationSettings['path']
         file_url = segmentation_standardization(f_path)
         if file_url:
             writting_path = Path(file_url).resolve()
