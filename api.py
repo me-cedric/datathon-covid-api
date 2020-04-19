@@ -85,34 +85,47 @@ def upload():
             file_path = Path(tmpath)
             file_path.write_bytes(tmp)
 
+        outputFiles = []
         if file_path.suffix == ".nii":
-            convert(str(file_path), str(save_path))
+            outputFiles = convert(str(file_path), str(save_path))
             file_path.unlink()
 
-        # TODO: Edit the image
-        writting_path = ""
         # Save it and get the new variables 'file_path'
         # Store url in db and return the result, these will be treated
-        folder = ClassificationSettings.path
-        if algorithm == "segmentation":
-            folder = SegmentationSettings.path
-            file_url = segmentation_standardization(str(file_path))
-            if file_url:
-                writting_path = Path(file_url).resolve()
-        else:
-            file_url = classification_standardization(str(file_path))
-            if file_url:
-                writting_path = Path(file_url).resolve()
         response.content_type = "application/json"
-        if not writting_path == "":
-            my_file = MedFile.create(
-                url=f"/{folder}/{writting_path.name}", path=str(writting_path)
-            )
-            my_file.save()
-            return json.dumps(model_to_dict(my_file))
+        if len(outputFiles) > 0:
+            json_file_objs = []
+            for filename in outputFiles:
+                file_obj = saveStandardFile(filename, file_path, algorithm)
+                if file_obj:
+                    json_file_objs.append(file_obj)
+            return json_file_objs
+        file_obj = saveStandardFile(file_path.name, file_path, algorithm)
+        if file_obj:
+            return file_obj
         response.status = 500
         return {"message": "File could not be uploaded.", "code": response.status}
 
+def saveStandardFile(filename, file_path, algorithm):
+    writting_path = ""
+    f_path = str(file_path.parent / filename)
+    folder = ClassificationSettings.path
+    if algorithm == "segmentation":
+        folder = SegmentationSettings.path
+        file_url = segmentation_standardization(f_path)
+        if file_url:
+            writting_path = Path(file_url).resolve()
+    else:
+        file_url = classification_standardization(f_path)
+        if file_url:
+            writting_path = Path(file_url).resolve()
+    if not writting_path == "":
+        my_file = MedFile.create(
+            url=f"/{folder}/{writting_path.name}", path=str(writting_path)
+        )
+        my_file.save()
+        return json.dumps(model_to_dict(my_file))
+    return False
 
 # Make images available
 @route("/images/<filepath:path>")

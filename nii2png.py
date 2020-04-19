@@ -19,7 +19,7 @@ import imageio
 def convert(inputfile, outputdirectory):
     print('Input file is ', inputfile)
     print('Output folder is ', outputdirectory)
-
+    fileNames = []
     # set fn as your 4d nifti file
     image_array = nibabel.load(inputfile).get_data()
     print(len(image_array.shape))
@@ -58,6 +58,7 @@ def convert(inputfile, outputdirectory):
                     print('Moving files...')
                     src = image_name
                     shutil.move(src, outputdirectory)
+                    fileNames.append(os.path.basename(src))
                     slice_counter += 1
                     print('Moved.')
 
@@ -98,9 +99,11 @@ def convert(inputfile, outputdirectory):
                     src_folder = os.path.dirname(os.path.abspath(src))
                     if not src_folder == outputdirectory:
                         shutil.move(src, outputdirectory)
+                    fileNames.append(os.path.basename(src))
                     slice_counter += 1
                     print('Moved.')
 
         print('Finished converting images')
     else:
         print('Not a 3D or 4D Image. Please try again.')
+    return fileNames
