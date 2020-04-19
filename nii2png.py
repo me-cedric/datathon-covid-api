@@ -34,10 +34,17 @@ def convert(inputfile, outputdirectory):
                 if (slice_counter % 1) == 0:
                     # rotate or no rotate
                     data = image_array[:, :, current_slice, current_volume]
-                            
+
                     # alternate slices and save as png
                     # print('Saving image...')
-                    image_name = inputfile[:-4] + "_t" + "{:0>3}".format(str(current_volume+1)) + "_z" + "{:0>3}".format(str(current_slice+1))+ ".png"
+                    image_name = (
+                        inputfile[:-4]
+                        + "_t"
+                        + "{:0>3}".format(str(current_volume + 1))
+                        + "_z"
+                        + "{:0>3}".format(str(current_slice + 1))
+                        + ".png"
+                    )
                     imageio.imwrite(image_name, data)
                     # print('Saved.')
 
@@ -76,7 +83,12 @@ def convert(inputfile, outputdirectory):
                 # alternate slices and save as png
                 if (slice_counter % 1) == 0:
                     # print('Saving image...')
-                    image_name = inputfile[:-4] + "_z" + "{:0>3}".format(str(current_slice+1))+ ".png"
+                    image_name = (
+                        inputfile[:-4]
+                        + "_z"
+                        + "{:0>3}".format(str(current_slice + 1))
+                        + ".png"
+                    )
                     imageio.imwrite(image_name, data)
                     # print('Saved.')
 
@@ -92,5 +104,5 @@ def convert(inputfile, outputdirectory):
 
         # print('Finished converting images')
     # else:
-        # print('Not a 3D or 4D Image. Please try again.')
+    # print('Not a 3D or 4D Image. Please try again.')
     return fileNames

@@ -37,10 +37,14 @@ services:
   web:
     build: .
     command: pipenv run python api.py
+    environment:
+      REDIS_HOST: broker
     volumes:
       - images_volume:/home/app/web/images
     expose:
       - 8000
+    depends_on:
+      - broker
 
 volumes:
   images_volume:

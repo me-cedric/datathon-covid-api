@@ -1,5 +1,6 @@
 from bottle import Bottle, hook, post, request, response, route, run, static_file
 import json
+import os
 import peewee as pw
 from pathlib import Path
 from playhouse.sqlite_ext import JSONField
@@ -15,18 +16,19 @@ import base64
 db = pw.SqliteDatabase("data/image.db")
 algo_seg = "segmentation"
 algo_cla = "classification"
-my_redis = redis.Redis(host='localhost', port=6379, db=0)
+my_redis = redis.Redis(host=os.environ.get("REDIS_HOST", "localhost"), port=6379, db=0)
 pubsub_seg = my_redis.pubsub()
 pubsub_seg.subscribe("covid-segmentation-client")
 pubsub_cla = my_redis.pubsub()
 pubsub_cla.subscribe("covid-classification-client")
 
-img_folder="images"
-entry_folder="entry-file"
-covid_folder="covid-case"
-healthy_folder="non-covid-case"
-ready_clas_folder="ready_for_classification"
-ready_seg_folder="ready_for_segmentation"
+img_folder = "images"
+entry_folder = "entry-file"
+covid_folder = "covid-case"
+healthy_folder = "non-covid-case"
+ready_clas_folder = "ready_for_classification"
+ready_seg_folder = "ready_for_segmentation"
+
 
 class Setting(pw.Model):
     pk = pw.AutoField()
@@ -36,6 +38,7 @@ class Setting(pw.Model):
     class Meta:
         database = db
 
+
 class MedFile(pw.Model):
     pk = pw.AutoField()
     url = pw.CharField()
@@ -44,15 +47,17 @@ class MedFile(pw.Model):
     class Meta:
         database = db
 
+
 class Status(pw.Model):
     pk = pw.AutoField()
     algotype = pw.CharField()
-    images = pw.ManyToManyField(MedFile, backref='status')
+    images = pw.ManyToManyField(MedFile, backref="status")
     value = pw.BooleanField(default=False)
     results = JSONField()
 
     class Meta:
         database = db
+
 
 FileAwaitingStatus = Status.images.get_through_model()
 
@@ -60,6 +65,7 @@ db.connect()
 db.create_tables([MedFile, Status, FileAwaitingStatus, Setting])
 
 # TODO migration
+
 
 @hook("after_request")
 def enable_cors():
@@ -99,7 +105,7 @@ def upload():
 
         file_path = save_path / fname
         upload.save(str(file_path), True)
-        
+
         if file_path.suffix == ".gz":
             tmp = gzip.decompress(file_path.read_bytes())
             tmpath = str(file_path.parent / file_path.stem)
@@ -128,6 +134,7 @@ def upload():
         response.status = 500
         return {"message": "File could not be uploaded.", "code": response.status}
 
+
 def saveStandardFile(filename, file_path, algorithm):
     writting_path = ""
     f_path = str(file_path.parent / filename)
@@ -149,10 +156,12 @@ def saveStandardFile(filename, file_path, algorithm):
         return model_to_dict(my_file)
     return False
 
+
 # Make images available
 @route("/images/<filepath:path>")
 def server_static(filepath):
     return static_file(filepath, root=f"{img_folder}/")
+
 
 #  Check status from redis
 @route("/status", method=["OPTIONS", "GET"])
@@ -172,12 +181,13 @@ def status():
                 else:
                     message = pubsub_cla.get_message()
                 if message:
-                    my_message = json.loads(message['data'].decode("utf-8"))
-                    if my_message['id'] == statusKey:
+                    my_message = json.loads(message["data"].decode("utf-8"))
+                    if my_message["id"] == statusKey:
                         my_status.value = True
-                        my_status.result = saveResults(my_message['images'])
+                        my_status.result = saveResults(my_message["images"])
             my_statuses.append(model_to_dict(my_status))
         return json.dumps(my_statuses)
+
 
 def saveResults(images):
     img_urls = []
@@ -187,7 +197,14 @@ def saveResults(images):
         save_path = f"{img_folder}/{healthy_folder}"
         if imgData.detect:
             save_path = f"{img_folder}/{covid_folder}"
-        img_urls.append({ "source": str(source_url), "result": f"{save_path}/res_{source_url.name}", "accuracy": imgData.accuracy, "detect": imgData.detect })
+        img_urls.append(
+            {
+                "source": str(source_url),
+                "result": f"{save_path}/res_{source_url.name}",
+                "accuracy": imgData.accuracy,
+                "detect": imgData.detect,
+            }
+        )
     return img_urls
 
 
@@ -210,6 +227,7 @@ def segmentation():
         response.content_type = "application/json"
         return json.dumps(handleAlgorithmCall(ids, algo_seg))
 
+
 def handleAlgorithmCall(ids, algo_type):
     resultingStatus = []
     for idData in ids:
@@ -218,23 +236,25 @@ def handleAlgorithmCall(ids, algo_type):
         resultingStatus.append(addStatus([idData], algo_type))
     return resultingStatus
 
+
 def addStatus(ids, algo_type):
     med_files = MedFile.select().where(MedFile.pk << ids)
     my_status = Status.create(algotype=algo_type)
     my_status.files.add(med_files)
     my_status.save()
 
-    trigger_data = { "id": my_status.pk, "images": [] }
+    trigger_data = {"id": my_status.pk, "images": []}
     for med_file in med_files:
         encoded_string = ""
         with open(med_file.path, "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read())
-        trigger_data["images"].append({ "id": med_file.pk, "binary": encoded_string })
+        trigger_data["images"].append({"id": med_file.pk, "binary": encoded_string})
     # TODO: Call (algo_type ? segmentation : classification) for this group of id
     if algo_type == algo_seg:
         pubsub_seg.publish("covid-segmentation-server", json.dumps(trigger_data))
     else:
         pubsub_cla.publish("covid-classification-server", json.dumps(trigger_data))
     return my_status
+
 
 run(host="0.0.0.0", port=8000, debug=True)
