@@ -10,6 +10,11 @@ bottle = "*"
 peewee = "*"
 numpy = "*"
 opencv-python = "*"
+scipy = "*"
+nibabel = "*"
+imageio = "*"
+imutils = "*"
+keras = "*"
 
 [requires]
 python_version = "3.8"
