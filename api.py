@@ -194,17 +194,17 @@ def checkStatus(pk):
 def saveResults(images):
     img_urls = []
     for imgData in images:
-        source_file = MedFile.get(MedFile.pk == imgData.id)
+        source_file = MedFile.get(MedFile.pk == imgData['id'])
         source_url = Path(source_file.url)
         save_path = f"{img_folder}/{healthy_folder}"
-        if imgData.detect:
+        if imgData.get('detect'):
             save_path = f"{img_folder}/{covid_folder}"
         img_urls.append(
             {
                 "source": str(source_url),
                 "result": f"{save_path}/res_{source_url.name}",
-                "accuracy": imgData.accuracy,
-                "detect": imgData.detect,
+                "accuracy": imgData.get('accuracy', 0),
+                "detect": imgData.get('detect', False),
             }
         )
     return img_urls
@@ -241,7 +241,7 @@ def handleAlgorithmCall(ids, algo_type):
 
 
 def addStatus(ids, algo_type):
-    my_status = Status.create(algotype=algo_type)
+    my_status = Status.create(algotype=algo_type, results={})
     my_status.save()
     med_files = MedFile.select().where(MedFile.pk << ids).execute()
     my_status.files.add(list(med_files))
