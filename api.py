@@ -205,7 +205,7 @@ def saveResults(images):
         save_path = f"{img_folder}/{healthy_folder}"
         if "detect" in imgData["metadata"] and imgData["metadata"]["detect"]:
             save_path = f"{img_folder}/{covid_folder}"
-        file_path = Path(f"{save_path}/res_{source_url.name}").resolve()
+        file_path = Path(f"{save_path}/res_{source_url.name}")
         file_path.write_bytes(base64.b64decode(imgData["binary"].encode()))
         img_urls.append(
             {
