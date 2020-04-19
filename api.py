@@ -141,7 +141,7 @@ def saveStandardFile(filename, file_path, algorithm):
             writting_path = Path(file_url).resolve()
     if not writting_path == "":
         my_file = MedFile.create(
-            url=f"/{folder}/{writting_path.name}", path=str(writting_path)
+            url=f"/api/{folder}/{writting_path.name}", path=str(writting_path)
         )
         my_file.save()
         return model_to_dict(my_file)
