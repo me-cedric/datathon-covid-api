@@ -1,6 +1,7 @@
 FROM python:3.8-slim
 
 RUN apt update && apt upgrade -y
+RUN apt install -y libgtk2.0-dev
 
 RUN useradd -d /home/app -m app
 
