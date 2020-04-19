@@ -69,22 +69,3 @@ def classification_standardization(input_path):
     if write_image(img, writting_path):
         return writting_path
     return False
-
-
-def display_image(img, path):
-    [m, n] = img.shape
-    caption = "%s [ %s x %s ]" % (path, m, n)
-    cv2.imshow(caption, img)
-    cv2.waitKey(0)
-
-
-# # Test function
-# path = "images/entry-file/scan.jpg"
-# seg_path = segmentation_standardization(path)
-# seg_img = load_image(seg_path, SegmentationSettings.color)
-# class_path = classification_standardization(path)
-# class_img = load_image(class_path, ClassificationSettings.color)
-
-# # Closing app
-# os.system("pause")
-# cv2.destroyAllWindows()
