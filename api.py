@@ -3,7 +3,6 @@ import json
 import os
 import peewee as pw
 from pathlib import Path
-from playhouse.sqlite_ext import JSONField
 from playhouse.shortcuts import model_to_dict
 from standardization import segmentation_standardization, classification_standardization
 from settings import segmentationSettings, classificationSettings
@@ -29,6 +28,14 @@ covid_folder = "covid-case"
 healthy_folder = "non-covid-case"
 ready_clas_folder = "ready_for_classification"
 ready_seg_folder = "ready_for_segmentation"
+
+class JSONField(pw.TextField):
+    def db_value(self, value):
+        return json.dumps(value)
+
+    def python_value(self, value):
+        if value is not None:
+            return json.loads(value)
 
 
 class MedFile(pw.Model):
@@ -203,7 +210,7 @@ def saveResults(images):
         img_urls.append(
             {
                 "source": str(source_url),
-                "result": f"/api/{save_path}/res_{source_url.name}",
+                "result": f"/api/{str(file_path)}",
                 "metadata": imgData["metadata"]
             }
         )
@@ -241,7 +248,7 @@ def handleAlgorithmCall(ids, algo_type):
 
 
 def addStatus(ids, algo_type):
-    my_status = Status.create(algotype=algo_type, results={})
+    my_status = Status.create(algotype=algo_type)
     my_status.save()
     med_files = MedFile.select().where(MedFile.pk << ids).execute()
     my_status.files.add(list(med_files))
@@ -254,7 +261,6 @@ def addStatus(ids, algo_type):
         trigger_data["images"].append(
             {"id": med_file.pk, "binary": encoded_string.decode()}
         )
-    # TODO: Call (algo_type ? segmentation : classification) for this group of id
     topic = "covid-classification-server"
     if algo_type == algo_seg:
         topic = "covid-segmentation-server"
