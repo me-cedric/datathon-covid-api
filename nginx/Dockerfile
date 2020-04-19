@@ -5,7 +5,7 @@ RUN git clone https://github.com/me-cedric/datathon-covid-gui.git
 WORKDIR /datathon-covid-gui
 
 RUN npm i
-RUN npm run build
+RUN npm run build:prod
 
 FROM nginx:1.17.4-alpine
 

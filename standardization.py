@@ -28,18 +28,20 @@ def segmentation_standardization(input_path):
     # Create writting path
     basename = os.path.basename(input_path)
     [filename, extension] = os.path.splitext(basename)
-    writting_path = segmentationSettings['path'] + filename + segmentationSettings['format']
+    writting_path = (
+        segmentationSettings["path"] + filename + segmentationSettings["format"]
+    )
 
     # Check if file already exists or should be created
     # if os.path.isfile(writting_path):
     #     print("File '%s' already exists" % (writting_path))
     # else:
-    img = load_image(input_path, segmentationSettings['color'])
+    img = load_image(input_path, segmentationSettings["color"])
     img = resize_image(
         img,
-        segmentationSettings['width'],
-        segmentationSettings['height'],
-        segmentationSettings['interpolation'],
+        segmentationSettings["width"],
+        segmentationSettings["height"],
+        segmentationSettings["interpolation"],
     )
     if write_image(img, writting_path):
         return writting_path
@@ -51,19 +53,19 @@ def classification_standardization(input_path):
     basename = os.path.basename(input_path)
     [filename, extension] = os.path.splitext(basename)
     writting_path = (
-        classificationSettings['path'] + filename + classificationSettings['format']
+        classificationSettings["path"] + filename + classificationSettings["format"]
     )
 
     # Check if file already exists or should be created
     # if os.path.isfile(writting_path):
     #     print("File '%s' already exists" % (writting_path))
     # else:
-    img = load_image(input_path, classificationSettings['color'])
+    img = load_image(input_path, classificationSettings["color"])
     img = resize_image(
         img,
-        classificationSettings['width'],
-        classificationSettings['height'],
-        classificationSettings['interpolation'],
+        classificationSettings["width"],
+        classificationSettings["height"],
+        classificationSettings["interpolation"],
     )
     if write_image(img, writting_path):
         return writting_path

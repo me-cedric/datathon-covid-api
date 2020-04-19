@@ -30,6 +30,7 @@ healthy_folder = "non-covid-case"
 ready_clas_folder = "ready_for_classification"
 ready_seg_folder = "ready_for_segmentation"
 
+
 class MedFile(pw.Model):
     pk = pw.AutoField()
     url = pw.CharField()
@@ -42,9 +43,9 @@ class MedFile(pw.Model):
 class Status(pw.Model):
     pk = pw.AutoField()
     algotype = pw.CharField()
-    files = pw.ManyToManyField(MedFile, backref = "status")
-    value = pw.BooleanField(default = False)
-    results = JSONField(default = None)
+    files = pw.ManyToManyField(MedFile, backref="status")
+    value = pw.BooleanField(default=False)
+    results = JSONField(default=None, null=True)
 
     class Meta:
         database = db
@@ -129,9 +130,9 @@ def upload():
 def saveStandardFile(filename, file_path, algorithm):
     writting_path = ""
     f_path = str(file_path.parent / filename)
-    folder = classificationSettings['path']
+    folder = classificationSettings["path"]
     if algorithm == algo_seg:
-        folder = segmentationSettings['path']
+        folder = segmentationSettings["path"]
         file_url = segmentation_standardization(f_path)
         if file_url:
             writting_path = Path(file_url).resolve()
@@ -171,6 +172,7 @@ def status():
             else:
                 my_statuses.append(checkStatus(statusKey))
         return json.dumps(my_statuses)
+
 
 def checkStatus(pk):
     my_status = Status.get(Status.pk == pk)
@@ -249,7 +251,9 @@ def addStatus(ids, algo_type):
         encoded_string = ""
         image_file = Path(med_file.path)
         encoded_string = base64.b64encode(image_file.read_bytes())
-        trigger_data["images"].append({"id": med_file.pk, "binary": encoded_string.decode()})
+        trigger_data["images"].append(
+            {"id": med_file.pk, "binary": encoded_string.decode()}
+        )
     # TODO: Call (algo_type ? segmentation : classification) for this group of id
     topic = "covid-classification-server"
     if algo_type == algo_seg:
