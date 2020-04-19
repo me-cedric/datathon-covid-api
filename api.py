@@ -183,8 +183,7 @@ def checkStatus(pk):
         else:
             message = pubsub_cla.get_message()
         if message:
-            print(message["data"])
-            my_message = json.loads(message["data"])
+            my_message = json.loads(message["data"].decode())
             if my_message["id"] == pk:
                 my_status.value = True
                 my_status.results = saveResults(my_message["images"])
@@ -194,17 +193,18 @@ def checkStatus(pk):
 def saveResults(images):
     img_urls = []
     for imgData in images:
-        source_file = MedFile.get(MedFile.pk == imgData.id)
+        source_file = MedFile.get(MedFile.pk == imgData["id"])
         source_url = Path(source_file.url)
         save_path = f"{img_folder}/{healthy_folder}"
-        if imgData.detect:
+        if "detect" in imgData["metadata"] and imgData["metadata"]["detect"]:
             save_path = f"{img_folder}/{covid_folder}"
+        file_path = Path(f"{save_path}/res_{source_url.name}").resolve()
+        file_path.write_bytes(base64.b64decode(imgData["binary"].encode()))
         img_urls.append(
             {
                 "source": str(source_url),
-                "result": f"{save_path}/res_{source_url.name}",
-                "accuracy": imgData.accuracy,
-                "detect": imgData.detect,
+                "result": f"/api/{save_path}/res_{source_url.name}",
+                "metadata": imgData["metadata"]
             }
         )
     return img_urls
