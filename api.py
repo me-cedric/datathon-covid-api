@@ -51,15 +51,15 @@ class MedFile(pw.Model):
 class Status(pw.Model):
     pk = pw.AutoField()
     algotype = pw.CharField()
-    images = pw.ManyToManyField(MedFile, backref="status")
-    value = pw.BooleanField(default=False)
-    results = JSONField()
+    files = pw.ManyToManyField(MedFile, backref = "status")
+    value = pw.BooleanField(default = False)
+    results = JSONField(default = None)
 
     class Meta:
         database = db
 
 
-FileAwaitingStatus = Status.images.get_through_model()
+FileAwaitingStatus = Status.files.get_through_model()
 
 db.connect()
 db.create_tables([MedFile, Status, FileAwaitingStatus, Setting])
@@ -184,7 +184,7 @@ def status():
                     my_message = json.loads(message["data"].decode("utf-8"))
                     if my_message["id"] == statusKey:
                         my_status.value = True
-                        my_status.result = saveResults(my_message["images"])
+                        my_status.results = saveResults(my_message["images"])
             my_statuses.append(model_to_dict(my_status))
         return json.dumps(my_statuses)
 
@@ -233,28 +233,29 @@ def handleAlgorithmCall(ids, algo_type):
     for idData in ids:
         if isinstance(idData, list):
             resultingStatus.append(addStatus(idData, algo_type))
-        resultingStatus.append(addStatus([idData], algo_type))
+        else:
+            resultingStatus.append(addStatus([idData], algo_type))
     return resultingStatus
 
 
 def addStatus(ids, algo_type):
-    med_files = MedFile.select().where(MedFile.pk << ids)
     my_status = Status.create(algotype=algo_type)
-    my_status.files.add(med_files)
     my_status.save()
+    med_files = MedFile.select().where(MedFile.pk << ids).execute()
+    my_status.files.add(list(med_files))
 
     trigger_data = {"id": my_status.pk, "images": []}
     for med_file in med_files:
         encoded_string = ""
-        with open(med_file.path, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read())
-        trigger_data["images"].append({"id": med_file.pk, "binary": encoded_string})
+        image_file = Path(med_file.path)
+        encoded_string = base64.b64encode(image_file.read_bytes())
+        trigger_data["images"].append({"id": med_file.pk, "binary": encoded_string.decode()})
     # TODO: Call (algo_type ? segmentation : classification) for this group of id
+    topic = "covid-classification-server"
     if algo_type == algo_seg:
-        pubsub_seg.publish("covid-segmentation-server", json.dumps(trigger_data))
-    else:
-        pubsub_cla.publish("covid-classification-server", json.dumps(trigger_data))
-    return my_status
+        topic = "covid-segmentation-server"
+    my_redis.publish("covid-segmentation-server", json.dumps(trigger_data))
+    return model_to_dict(my_status)
 
 
 run(host="0.0.0.0", port=8000, debug=True)
