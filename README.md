@@ -7,11 +7,17 @@ pipenv shell
 python api.py
 ```
 
-
-# deployment
+## deployment
 
 Use a Linux container/WSL
+
+```bash
+sudo docker-compose up -d --remove-orphans --build
 ```
+
+To deploy on an azure server
+
+```bash
 rsync -av . datathon@gpuvm1v100.eastus.cloudapp.azure.com:~/Desktop/datathon-covid-api
 ssh datathon@gpuvm1v100.eastus.cloudapp.azure.com "cd ~/Desktop/datathon-covid-api && sudo docker-compose up -d --remove-orphans --build"
 ```
