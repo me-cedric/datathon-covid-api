@@ -28,6 +28,14 @@ healthy_folder="non-covid-case"
 ready_clas_folder="ready_for_classification"
 ready_seg_folder="ready_for_segmentation"
 
+class Setting(pw.Model):
+    pk = pw.AutoField()
+    name = pw.CharField()
+    content = JSONField()
+
+    class Meta:
+        database = db
+
 class MedFile(pw.Model):
     pk = pw.AutoField()
     url = pw.CharField()
@@ -49,8 +57,9 @@ class Status(pw.Model):
 FileAwaitingStatus = Status.images.get_through_model()
 
 db.connect()
-db.create_tables([MedFile, Status, FileAwaitingStatus])
+db.create_tables([MedFile, Status, FileAwaitingStatus, Setting])
 
+# TODO migration
 
 @hook("after_request")
 def enable_cors():
