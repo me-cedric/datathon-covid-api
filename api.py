@@ -29,6 +29,7 @@ healthy_folder = "non-covid-case"
 ready_clas_folder = "ready_for_classification"
 ready_seg_folder = "ready_for_segmentation"
 
+
 class JSONField(pw.TextField):
     def db_value(self, value):
         return json.dumps(value)
@@ -211,7 +212,7 @@ def saveResults(images):
             {
                 "source": str(source_url),
                 "result": f"/api/{str(file_path)}",
-                "metadata": imgData["metadata"]
+                "metadata": imgData["metadata"],
             }
         )
     return img_urls

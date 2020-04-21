@@ -17,11 +17,13 @@ services:
   nginx:
     build:
       context: ./nginx
+    environment:
+      REDIS_HOST: broker
     volumes:
       - images_volume:/home/app/web/images
       - data_volume:/home/app/web/data
     ports:
-      - "8000:80"
+      - "8080:80"
     depends_on:
       - web
     # labels:
@@ -34,6 +36,11 @@ services:
     #   - traefik.http.routers.datathon-https.rule=Host(`gpuvm1v100.eastus.cloudapp.azure.com`)
     #   - traefik.http.routers.datathon-https.tls=true
     #   - traefik.http.routers.datathon-https.tls.certresolver=letsencrypt
+  segmentation:
+    build:
+      context: ./segmentation
+    depends_on:
+      - broker
   web:
     build: .
     command: pipenv run python api.py

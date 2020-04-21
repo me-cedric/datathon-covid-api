@@ -1,0 +1,3 @@
+[submodule "segmentation"]
+	path = segmentation
+	url = https://gitlab.com/datathon-covid19/segmentation-api.git
