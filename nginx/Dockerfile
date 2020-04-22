@@ -11,5 +11,4 @@ FROM nginx:1.17.4-alpine
 
 RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d
-COPY .htpasswd /etc/nginx/
 COPY --from=BUILDER /datathon-covid-gui/dist/datathon-covid-gui-frontend /opt
