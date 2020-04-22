@@ -17,10 +17,8 @@ db = pw.SqliteDatabase("data/image.db")
 algo_seg = "segmentation"
 algo_cla = "classification"
 my_redis = redis.Redis(host=os.environ.get("REDIS_HOST", "localhost"), port=6379, db=0)
-pubsub_seg = my_redis.pubsub(ignore_subscribe_messages=True)
-pubsub_seg.subscribe("covid-segmentation-client")
-pubsub_cla = my_redis.pubsub(ignore_subscribe_messages=True)
-pubsub_cla.subscribe("covid-classification-client")
+pubsub = my_redis.pubsub(ignore_subscribe_messages=True)
+pubsub.subscribe("covid-client")
 
 img_folder = "images"
 entry_folder = "entry-file"
@@ -67,17 +65,17 @@ db.create_tables([MedFile, Status, FileAwaitingStatus])
 # TODO migration
 initDefaultDB()
 
-# @hook("after_request")
-# def enable_cors():
-#     """
-#     You need to add some headers to each request.
-#     Don't use the wildcard '*' for Access-Control-Allow-Origin in production.
-#     """
-#     response.headers["Access-Control-Allow-Origin"] = "*"
-#     response.headers["Access-Control-Allow-Methods"] = "PUT, GET, POST, DELETE, OPTIONS"
-#     response.headers[
-#         "Access-Control-Allow-Headers"
-#     ] = "Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token"
+@hook("after_request")
+def enable_cors():
+    """
+    You need to add some headers to each request.
+    Don't use the wildcard '*' for Access-Control-Allow-Origin in production.
+    """
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "PUT, GET, POST, DELETE, OPTIONS"
+    response.headers[
+        "Access-Control-Allow-Headers"
+    ] = "Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token, Authorization"
 
 
 @route("/api/")
@@ -185,11 +183,7 @@ def status():
 def checkStatus(pk):
     my_status = Status.get(Status.pk == pk)
     if not my_status.value:
-        message = None
-        if my_status.algotype == algo_seg:
-            message = pubsub_seg.get_message()
-        else:
-            message = pubsub_cla.get_message()
+        message = pubsub.get_message()
         if message:
             my_message = json.loads(message["data"].decode())
             if my_message["id"] == pk:
@@ -254,7 +248,7 @@ def addStatus(ids, algo_type):
     med_files = MedFile.select().where(MedFile.pk << ids).execute()
     my_status.files.add(list(med_files))
 
-    trigger_data = {"id": my_status.pk, "images": []}
+    trigger_data = {"id": my_status.pk, "images": [], "algotype": algo_type}
     for med_file in med_files:
         encoded_string = ""
         image_file = Path(med_file.path)
