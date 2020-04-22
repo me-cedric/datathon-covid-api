@@ -17,8 +17,6 @@ services:
   nginx:
     build:
       context: ./nginx
-    environment:
-      REDIS_HOST: broker
     volumes:
       - images_volume:/home/app/web/images
       - data_volume:/home/app/web/data
@@ -39,6 +37,8 @@ services:
   segmentation:
     build:
       context: ./segmentation
+    environment:
+      REDIS_HOST: broker
     depends_on:
       - broker
   web:
