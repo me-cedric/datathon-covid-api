@@ -3,8 +3,8 @@ version: '3'
 services:
   broker:
     image: redis:5
-    ports:
-      - '6379:6379'
+    expose:
+      - 6379
   # reverse-proxy:
   #   image: traefik:v2.2
   #   ports:

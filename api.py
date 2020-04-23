@@ -256,10 +256,7 @@ def addStatus(ids, algo_type):
         trigger_data["images"].append(
             {"id": med_file.pk, "binary": encoded_string.decode()}
         )
-    topic = "covid-classification-server"
-    if algo_type == algo_seg:
-        topic = "covid-segmentation-server"
-    my_redis.publish("covid-segmentation-server", json.dumps(trigger_data))
+    my_redis.publish("covid-server", json.dumps(trigger_data))
     return model_to_dict(my_status)
 
 
