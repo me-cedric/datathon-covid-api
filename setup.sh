@@ -32,4 +32,4 @@ sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
 git submodule update --init --recursive
 
-docker-compose up -d --build
+sudo docker-compose up -d --build
