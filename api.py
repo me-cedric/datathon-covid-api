@@ -116,7 +116,7 @@ def upload():
         if file_path.suffix == ".nii":
             outputFiles = niiConvert(str(file_path), str(save_path))
             file_path.unlink()
-        elif file_path.suffix == ".dicom":
+        elif file_path.suffix == ".dcm":
             outputFiles = dicomConvert(str(file_path), str(save_path))
             file_path.unlink()
 
