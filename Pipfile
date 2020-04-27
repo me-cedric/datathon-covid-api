@@ -14,6 +14,7 @@ scipy = "*"
 nibabel = "*"
 imageio = "*"
 redis = "*"
+pydicom = "*"
 
 [requires]
 python_version = "3.8"

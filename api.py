@@ -6,7 +6,8 @@ from pathlib import Path
 from playhouse.shortcuts import model_to_dict
 from standardization import segmentation_standardization, classification_standardization
 from settings import segmentationSettings, classificationSettings
-from nii2png import convert
+from nii2png import niiConvert
+from dicom2png import dicomConvert
 import gzip
 import redis
 import base64
@@ -113,7 +114,10 @@ def upload():
 
         outputFiles = []
         if file_path.suffix == ".nii":
-            outputFiles = convert(str(file_path), str(save_path))
+            outputFiles = niiConvert(str(file_path), str(save_path))
+            file_path.unlink()
+        elif file_path.suffix == ".dicom":
+            outputFiles = dicomConvert(str(file_path), str(save_path))
             file_path.unlink()
 
         # Save it and get the new variables 'file_path'

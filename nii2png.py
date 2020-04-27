@@ -3,7 +3,7 @@ import sys, getopt
 import imageio
 
 
-def convert(inputfile, outputdirectory):
+def niiConvert(inputfile, outputdirectory):
     # print('Input file is ', inputfile)
     # print('Output folder is ', outputdirectory)
     fileNames = []
