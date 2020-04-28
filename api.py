@@ -92,9 +92,9 @@ def upload():
         # Get the file
         upload = request.POST["file"]
         algorithm = request.POST["algorithm"]
-        fname = Path(upload.filename)
+        fname = Path(upload.filename.lower())
         # If not a good format, return error
-        if fname.suffix.lower() not in (".png", ".jpg", ".jpeg", ".nii", ".gz", ".dcm"):
+        if fname.suffix not in (".png", ".jpg", ".jpeg", ".nii", ".gz", ".dcm"):
             response.status = 405
             return {"message": "File extension not allowed.", "code": response.status}
         # Save the entry file
@@ -117,7 +117,7 @@ def upload():
             outputFiles = niiConvert(str(file_path), str(save_path))
             file_path.unlink()
         elif file_path.suffix == ".dcm":
-            outputFiles = dicomConvert(str(file_path), str(save_path))
+            outputFiles = [dicomConvert(str(file_path), str(save_path))]
             file_path.unlink()
 
         # Save it and get the new variables 'file_path'
