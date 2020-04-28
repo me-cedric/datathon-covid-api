@@ -94,7 +94,7 @@ def upload():
         algorithm = request.POST["algorithm"]
         fname = Path(upload.filename)
         # If not a good format, return error
-        if fname.suffix not in (".png", ".jpg", ".jpeg", ".nii", ".gz"):
+        if fname.suffix.lower() not in (".png", ".jpg", ".jpeg", ".nii", ".gz", ".dcm"):
             response.status = 405
             return {"message": "File extension not allowed.", "code": response.status}
         # Save the entry file
